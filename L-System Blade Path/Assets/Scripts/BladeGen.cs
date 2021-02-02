@@ -37,7 +37,7 @@ public class BladeGen : MonoBehaviour
 		
 		if(nodesFound && !generated)
 		{
-			ProceduralCuboid mesh = transform.GetComponent<ProceduralCuboid>();
+			ProceduralBlade mesh = transform.GetComponent<ProceduralBlade>();
 			mesh.valuesPassed = true;
 			//mesh.GeneratePathedCuboid(points.Count, points);
 			mesh.GeneratePathedBlade(points.Count, points);

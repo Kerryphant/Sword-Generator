@@ -1,9 +1,8 @@
-﻿using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 
 [RequireComponent(typeof(MeshFilter), typeof(MeshRenderer))]
-public class ProceduralCuboid : MonoBehaviour
+public class ProceduralBlade: MonoBehaviour
 {
 	Mesh mesh;
 	List<Vector3> vertices;
@@ -14,18 +13,10 @@ public class ProceduralCuboid : MonoBehaviour
 	public float height = 1;
 	public float depth = 3;
 
-	private float prevWidth = 0;
-	private float prevHeight = 0;
-	private float prevDepth = 0;
-
 	public bool valuesPassed;
 
-
 	public Material mat;
-	public Material lineMaterial;
-
-	GameObject line;
-	LineRenderer lineRenderer;
+	public GameObject placeHolder;
 
 	// Start is called before the first frame update
 	void Awake()
@@ -38,36 +29,23 @@ public class ProceduralCuboid : MonoBehaviour
 
 	private void Start()
 	{
-		//MakeCuboid();
-		//UpdateMesh();
-
 		GetComponent<Renderer>().material = mat;
+		Instantiate(placeHolder, transform);
 	}
 
 	void Update()
 	{
-		/*if ((width != prevWidth) || (height != prevHeight) || (depth != prevDepth))
-		{
-			prevWidth = width;
-			prevHeight = height;
-			prevDepth = depth;
-		}
-		
-		 MakeCuboid();*/
-
 		if (valuesPassed)
 		{
 			UpdateMesh();
 		}
-
-
 	}
 
 	public void GeneratePathedBlade(int numPoints_, List<Vector3> points_)
 	{
 		GenerateCuboidLine(numPoints_);
 		PositionVerticesToPoints(numPoints_, points_);
-
+		ShapeIntoDiamondBlade(numPoints_, points_);
 	}
 
 	void GenerateCuboidLine(int numPoints_)
@@ -183,7 +161,7 @@ public class ProceduralCuboid : MonoBehaviour
 		startVert = 4;
 		for (int i = 1; i < numPoints_ - 1; i++)
 		{
-			//get the angle between the x-axis and the line made from the current point to the next point
+			//get the angle between the positive x-axis and the line made from the current point to the next point
 			float rotationA = SignedAngleBetween(Vector3.right, points_[i + 1] - points_[i], new Vector3(0, 1, 0));
 			
 			//get HALF of angle between the line made from the current & next point and the current & previous point
@@ -243,36 +221,76 @@ public class ProceduralCuboid : MonoBehaviour
 		return signed_angle;
 	}
 
-	private void MakeCuboid()
+	void ShapeIntoDiamondBlade(int numPoints_, List<Vector3> points_)
 	{
-		vertices = new List<Vector3>
+		Vector3 axis;
+		int startVert = 0;
+		
+		//rotate the vertices 45 degress using the line between the current point and next point as an axis
+		for (int i = 0; i < numPoints_ - 1; i++)
 		{
-			new Vector3(0, 0, 0),
-			new Vector3(0, height, 0),
-			new Vector3(width, 0, 0),
-			new Vector3(width, height, 0),
+			for (int j = 0; j < 4; j++)
+			{
+				placeHolder.transform.position = vertices[startVert + j];
+				axis = points_[i + 1] - points_[i];
 
-			new Vector3(width, 0, depth),
-			new Vector3(width, height, depth),
-			new Vector3(0, 0, depth),
-			new Vector3(0, height, depth),
-		};
+				placeHolder.transform.RotateAround(points_[i], axis, 45);
+				vertices[startVert + j] = placeHolder.transform.position;
+			
+			}
+			startVert += 4;
+		}
 
-		triangles = new List<int>
+		//rotate the end vertices
+		startVert = vertices.Count - 4;
+		axis = points_[points_.Count - 1] - points_[points_.Count - 2];
+		for (int j = 0; j < 4; j++)
 		{
-			//front
-			0, 1, 2, 2, 1, 3,
-			//right
-			2, 3, 4, 4, 3, 5,
-			//back
-			4, 5, 6, 6, 5, 7,
-			//left
-			6, 7, 0, 0, 7, 1,
-			//top
-			1, 7, 3, 3, 7, 5,
-			//bottom
-			6, 0, 4, 4, 0, 2
-		};
+			placeHolder.transform.position = vertices[startVert + j];
+
+			placeHolder.transform.RotateAround(points_[points_.Count - 1], axis, 45);
+			vertices[startVert + j] = placeHolder.transform.position;
+
+		}
+		
+		//displace points to give blade shape
+		startVert = 0;
+		for (int i = 0; i < numPoints_; i++)
+		{
+			vertices[startVert] = new Vector3(vertices[startVert].x, vertices[startVert].y + 0.25f, vertices[startVert].z);
+			vertices[startVert + 1] = new Vector3(vertices[startVert + 1].x - 0.25f, vertices[startVert + 1].y, vertices[startVert + 1].z);
+			vertices[startVert + 2] = new Vector3(vertices[startVert + 2].x + 0.25f, vertices[startVert + 2].y, vertices[startVert + 2].z);
+			vertices[startVert + 3] = new Vector3(vertices[startVert + 3].x, vertices[startVert + 3].y - 0.25f, vertices[startVert + 3].z);
+
+			startVert += 4;
+		}
+		
+
+		//Create the point of the blade
+		Vector3 midpoint = new Vector3((vertices[vertices.Count - 4].x + vertices[vertices.Count - 1].x) / 2.0f, (vertices[vertices.Count - 4].y + vertices[vertices.Count - 1].y) / 2.0f, (vertices[vertices.Count - 4].z + vertices[vertices.Count - 1].z) / 2.0f);
+		Vector3 direction = points_[points_.Count - 2] - points_[points_.Count - 1];
+		direction.Normalize();
+		vertices.Add(midpoint - (2*direction));
+
+		//startVert = 5;
+		//for (int i = 0; i < 4; i++)
+		//{
+		triangles.Add(vertices.Count - 1);
+		triangles.Add(vertices.Count - 4);
+		triangles.Add(vertices.Count - 5);
+
+		triangles.Add(vertices.Count - 1);
+		triangles.Add(vertices.Count - 2);
+		triangles.Add(vertices.Count - 4);
+
+		triangles.Add(vertices.Count - 1);
+		triangles.Add(vertices.Count - 3);
+		triangles.Add(vertices.Count - 2);
+
+		triangles.Add(vertices.Count - 1);
+		triangles.Add(vertices.Count - 5);
+		triangles.Add(vertices.Count - 3);
+		//}
 
 	}
 
@@ -285,141 +303,4 @@ public class ProceduralCuboid : MonoBehaviour
 		mesh.RecalculateNormals();
 
 	}
-
-	/*public void GeneratePathedCuboid(int numPoints_, List<Vector3> points_)
-	{
-		int cuboidCount = numPoints_ - 1;
-		List<bool> verticalFace = new List<bool>();
-
-
-		if (numPoints_ > 0)
-		{
-			vertices = new List<Vector3>();
-			for (int i = 0; i < numPoints_; i++)
-			{
-
-				if (i != 0 && points_[i] == points_[i - 1])
-				{
-					//there is a duplicate in this set
-				}
-				else
-				{
-					//(not first iteration, and the previous x is not the same as current x) and (next item exists and next z is less than current z and next x is not the same as current x) or (next item exists and its z is the same as the current z and the next x is not the same as the current x)
-					if (((i != 0 && (points_[i - 1].x != points_[i].x)) && ((i + 1 < numPoints_) && (points_[i + 1].z < points_[i].z) && (points_[i + 1].x != points_[i].x)))
-					|| ((i + 1 < numPoints_) && (points_[i + 1].z == points_[i].z) && (points_[i + 1].x != points_[i].x))
-					|| ((i + 1 >= numPoints_) && points_[i].z == points_[i - 1].z))
-					{
-						if (points_[i].x < 0)
-						{
-							//bottom left
-							vertices.Add(new Vector3(points_[i].x, points_[i].y - (0.5f * height), points_[i].z - (0.5f * width)));
-							//top left
-							vertices.Add(new Vector3(points_[i].x, points_[i].y + (0.5f * height), points_[i].z - (0.5f * width)));
-							//bottom right
-							vertices.Add(new Vector3(points_[i].x, points_[i].y - (0.5f * height), points_[i].z + (0.5f * width)));
-							//top right
-							vertices.Add(new Vector3(points_[i].x, points_[i].y + (0.5f * height), points_[i].z + (0.5f * width)));
-						}
-						else
-						{
-							//bottom left
-							vertices.Add(new Vector3(points_[i].x, points_[i].y - (0.5f * height), points_[i].z + (0.5f * width)));
-							//top left
-							vertices.Add(new Vector3(points_[i].x, points_[i].y + (0.5f * height), points_[i].z + (0.5f * width)));
-							//bottom right
-							vertices.Add(new Vector3(points_[i].x, points_[i].y - (0.5f * height), points_[i].z - (0.5f * width)));
-							//top right
-							vertices.Add(new Vector3(points_[i].x, points_[i].y + (0.5f * height), points_[i].z - (0.5f * width)));
-
-						}
-
-
-						verticalFace.Add(true);
-					}
-					else
-					{
-						//bottom left
-						vertices.Add(new Vector3(points_[i].x - (0.5f * width), points_[i].y - (0.5f * height), points_[i].z));
-						//top left
-						vertices.Add(new Vector3(points_[i].x - (0.5f * width), points_[i].y + (0.5f * height), points_[i].z));
-						//bottom right
-						vertices.Add(new Vector3(points_[i].x + (0.5f * width), points_[i].y - (0.5f * height), points_[i].z));
-						//top right
-						vertices.Add(new Vector3(points_[i].x + (0.5f * width), points_[i].y + (0.5f * height), points_[i].z));
-
-						verticalFace.Add(false);
-					}
-				}
-			}
-
-			int startVert = 0;
-			triangles = new List<int>();
-			for (int i = 0; i < cuboidCount; i++)
-			{
-				//front 0, 1, 2, 2, 1, 3,
-				triangles.Add(startVert + 0);
-				triangles.Add(startVert + 1);
-				triangles.Add(startVert + 2);
-				triangles.Add(startVert + 2);
-				triangles.Add(startVert + 1);
-				triangles.Add(startVert + 3);
-
-
-				//right 2, 3, 4, 4, 3, 5,
-				triangles.Add(startVert + 2);
-				triangles.Add(startVert + 3);
-				triangles.Add(startVert + 6);
-				triangles.Add(startVert + 6);
-				triangles.Add(startVert + 3);
-				triangles.Add(startVert + 7);
-
-				//back 4, 5, 6, 6, 5, 7,
-				if (verticalFace[i])
-				{
-					triangles.Add(startVert + 4);
-					triangles.Add(startVert + 5);
-					triangles.Add(startVert + 6);
-					triangles.Add(startVert + 6);
-					triangles.Add(startVert + 5);
-					triangles.Add(startVert + 7);
-				}
-				else
-				{
-					triangles.Add(startVert + 6);
-					triangles.Add(startVert + 7);
-					triangles.Add(startVert + 4);
-					triangles.Add(startVert + 4);
-					triangles.Add(startVert + 7);
-					triangles.Add(startVert + 5);
-				}
-
-
-				//left 6, 7, 0, 0, 7, 1,
-				triangles.Add(startVert + 4);
-				triangles.Add(startVert + 5);
-				triangles.Add(startVert + 0);
-				triangles.Add(startVert + 0);
-				triangles.Add(startVert + 5);
-				triangles.Add(startVert + 1);
-
-				//top 1, 7, 3, 3, 7, 5
-				triangles.Add(startVert + 1);
-				triangles.Add(startVert + 5);
-				triangles.Add(startVert + 3);
-				triangles.Add(startVert + 3);
-				triangles.Add(startVert + 5);
-				triangles.Add(startVert + 7);
-
-				//bottom 6, 0, 4, 4, 0, 2
-				triangles.Add(startVert + 4);
-				triangles.Add(startVert + 0);
-				triangles.Add(startVert + 6);
-				triangles.Add(startVert + 6);
-				triangles.Add(startVert + 0);
-				triangles.Add(startVert + 2);
-
-				startVert += 4;
-			}
-		}
-	}*/
 }

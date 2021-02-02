@@ -8,16 +8,18 @@ namespace SVS
 	public class SimpleVisualiser : MonoBehaviour
 	{
 		public LSystemGenerator lSystem;
-		//List<Vector3> positions = new List<Vector3>();
-		HashSet<Vector3> positions = new HashSet<Vector3>();
+		HashSet<Vector3> positions = new HashSet<Vector3>(); //hash set to avoid duplicate points
 		public GameObject prefab;
 		public Material lineMaterial;
 
 		[SerializeField]
-		private int length = 8;
+		private int length = 1;
 
 		[SerializeField]
 		private float angle = 90;
+
+		[Range(0, 1)]
+		public float chanceToChooseAngle = 0.3f;
 
 
 		public int Length
@@ -46,32 +48,21 @@ namespace SVS
 		{
 			if(Input.GetKeyDown("space"))
 			{
-				/*foreach (Transform child in transform)
-				{
-					if (child.GetComponent<SphereCollider>())
-					{
-						child.parent = null;
-						GameObject.DestroyImmediate(child.gameObject);
-					}
-				}*/
-
 				var points = GameObject.FindGameObjectsWithTag("point");
 
 				foreach (var item in points)
 				{
 					DestroyImmediate(item);
-					//Destroy(item);
 				}
 
 				positions.Clear();
 
-				length = 8;
-
 				var sequence = lSystem.GenerateSentence();
+				Debug.Log(sequence);
 				VisualiseSequence(sequence);
 				
 				transform.GetComponent<BladeGen>().nodesFound = false;
-				transform.GetComponent<ProceduralCuboid>().valuesPassed = false;
+				transform.GetComponent<ProceduralBlade>().valuesPassed = false;
 			}	
 		}
 
@@ -115,15 +106,29 @@ namespace SVS
 					case EncodingLetters.draw:
 						tempPos = currentPosition;
 						currentPosition += direction * length;
-						//DrawLine(tempPos, currentPosition, Color.red);
-						length -= 2;
 						positions.Add(currentPosition);
 						break;
 					case EncodingLetters.turnRight:
-						direction = Quaternion.AngleAxis(angle, Vector3.up) * direction;
+						if (UnityEngine.Random.value < chanceToChooseAngle)
+						{
+							float tempAngle = (UnityEngine.Random.Range(10, 50));
+							direction = Quaternion.AngleAxis(UnityEngine.Random.Range(10, 30), Vector3.up) * direction;
+						}
+						else
+						{
+							direction = Quaternion.AngleAxis(angle, Vector3.up) * direction;
+						}				
 						break;
 					case EncodingLetters.turnLeft:
-						direction = Quaternion.AngleAxis(-angle, Vector3.up) * direction;
+						if (UnityEngine.Random.value < chanceToChooseAngle)
+						{
+							float tempAngle = -(UnityEngine.Random.Range(10, 50));
+							direction = Quaternion.AngleAxis(tempAngle, Vector3.up) * direction;
+						}
+						else
+						{
+							direction = Quaternion.AngleAxis(-angle, Vector3.up) * direction;
+						}					
 						break;
 					default:
 						break;
@@ -134,9 +139,6 @@ namespace SVS
 			{
 				Instantiate(prefab, position, Quaternion.identity, transform);
 			}
-
-			
-
 		}
 
 		private void DrawLine(Vector3 start, Vector3 end, Color colour)
