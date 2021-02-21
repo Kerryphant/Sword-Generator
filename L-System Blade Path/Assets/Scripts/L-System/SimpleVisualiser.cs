@@ -61,7 +61,9 @@ namespace SVS
 				Debug.Log(sequence);
 				VisualiseSequence(sequence);
 				
+
 				transform.GetComponent<BladeGen>().nodesFound = false;
+				transform.GetComponentInChildren<HiltGen>().generated = false;
 				transform.GetComponent<ProceduralBlade>().valuesPassed = false;
 			}	
 		}

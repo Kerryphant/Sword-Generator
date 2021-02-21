@@ -13,7 +13,7 @@ public class ProceduralSphere : MonoBehaviour
 	int[][] grid;
 
 	public int segCount = 20;
-	public float radius = 5;
+	public float radius = 1;
 
 	//Track changes so mesh can be live updated
 	private float prevSegCount;
@@ -88,7 +88,7 @@ public class ProceduralSphere : MonoBehaviour
 		}
 	}
 
-	void MakeSphere()
+	public void MakeSphere()
 	{
 		vertices = new List<Vector3>();
 		normals = new List<Vector3>();
