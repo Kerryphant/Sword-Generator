@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class HiltGen : MonoBehaviour
+public class HiltGenerator : MonoBehaviour
 {
 	public bool generated = false;
 

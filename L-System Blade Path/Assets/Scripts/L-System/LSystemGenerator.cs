@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using UnityEngine;
 using System.Text;
 
+using UnityEngine.UI;
+
 namespace SVS
 {
 	public class LSystemGenerator : MonoBehaviour
@@ -18,9 +20,34 @@ namespace SVS
 		[Range(0, 1)]
 		public float chanceToIgnoreRule = 0.3f;
 
+
+		public InputField iterationInput;
+		public InputField ignoreRuleInput;
+
 		private void Start()
 		{
 			Debug.Log(GenerateSentence());
+
+			iterationInput.onEndEdit.AddListener(delegate { setIterationLimit(iterationInput); });
+			ignoreRuleInput.onEndEdit.AddListener(delegate { setIgnoreRule(ignoreRuleInput); });
+		}
+
+		void setIterationLimit(InputField userInput)
+		{
+			int value = int.Parse(userInput.text);
+			if (value >= 0 && value <= 20)
+			{
+				iterationLimit = int.Parse(userInput.text);
+			}
+		}
+
+		void setIgnoreRule(InputField userInput)
+		{
+			int value = int.Parse(userInput.text);
+			if (value >= 0 && value <= 1)
+			{
+				chanceToIgnoreRule = float.Parse(userInput.text);
+			}
 		}
 
 		public string GenerateSentence(string word = null)

@@ -3,6 +3,8 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+using UnityEngine.UI;
+
 namespace SVS
 {
 	public class SimpleVisualiser : MonoBehaviour
@@ -21,6 +23,10 @@ namespace SVS
 		[Range(0, 1)]
 		public float chanceToChooseAngle = 0.3f;
 
+		public InputField lengthInput;
+		public InputField angleInput;
+		public InputField randomAngleInput;
+		public Button button;
 
 		public int Length
 		{
@@ -42,30 +48,105 @@ namespace SVS
 		{
 			var sequence = lSystem.GenerateSentence();
 			VisualiseSequence(sequence);
+
+
+			lengthInput.onEndEdit.AddListener(delegate { setLengthLimit(lengthInput); });
+			angleInput.onEndEdit.AddListener(delegate { setAngle(angleInput); });
+			randomAngleInput.onEndEdit.AddListener(delegate { setRandomAngleChance(randomAngleInput); });
+
+
+			button.onClick.AddListener(BeginMeshGen);
 		}
 
+
+		void setLengthLimit(InputField userInput)
+		{
+			int value = int.Parse(userInput.text);
+			if (value >= 0 && value <= 20)
+			{
+				length = int.Parse(userInput.text);
+			}
+		}
+
+		void setAngle(InputField userInput)
+		{
+			int value = int.Parse(userInput.text);
+			if (value > 0 && value <= 90)
+			{
+				angle = int.Parse(userInput.text);
+			}
+		}
+
+		void setRandomAngleChance(InputField userInput)
+		{
+			int value = int.Parse(userInput.text);
+			if (value >= 0 && value <= 1)
+			{
+				chanceToChooseAngle = value;
+			}
+		}
+
+		void BeginMeshGen() 
+		{
+			var points = GameObject.FindGameObjectsWithTag("point");
+
+			foreach (var item in points)
+			{
+				DestroyImmediate(item);
+			}
+
+			positions.Clear();
+
+			var sequence = lSystem.GenerateSentence();
+			Debug.Log(sequence);
+			VisualiseSequence(sequence);
+
+
+			transform.GetComponent<BladeGenerator>().nodesFound = false;
+			transform.GetComponentInChildren<HiltGenerator>().generated = false;
+			transform.GetComponent<ProceduralBlade>().valuesPassed = false;
+		}
+
+		
 		private void Update()
 		{
 			if(Input.GetKeyDown("space"))
 			{
-				var points = GameObject.FindGameObjectsWithTag("point");
+				BeginMeshGen();
+			}
 
-				foreach (var item in points)
+			if (Input.GetKeyDown(KeyCode.U))
+			{
+				MeshFilter[] meshFilters = GetComponentsInChildren<MeshFilter>();
+				CombineInstance[] combine = new CombineInstance[meshFilters.Length];
+
+				int i = 0;
+				while (i < meshFilters.Length)
 				{
-					DestroyImmediate(item);
+					combine[i].mesh = meshFilters[i].sharedMesh;
+					combine[i].transform = meshFilters[i].transform.localToWorldMatrix;
+					meshFilters[i].gameObject.SetActive(false);
+
+					i++;
 				}
 
-				positions.Clear();
+				//Mesh combinedMesh = new Mesh();
+				//combinedMesh.CombineMeshes(combine);
 
-				var sequence = lSystem.GenerateSentence();
-				Debug.Log(sequence);
-				VisualiseSequence(sequence);
-				
+				transform.GetComponent<MeshFilter>().mesh = new Mesh();
+				transform.GetComponent<MeshFilter>().mesh.CombineMeshes(combine);
+				transform.gameObject.SetActive(true);
 
-				transform.GetComponent<BladeGen>().nodesFound = false;
-				transform.GetComponentInChildren<HiltGen>().generated = false;
-				transform.GetComponent<ProceduralBlade>().valuesPassed = false;
-			}	
+
+				List<Vector3> vert = new List<Vector3>(transform.GetComponent<MeshFilter>().mesh.vertices);
+				List<Vector3> norm = new List<Vector3>(transform.GetComponent<MeshFilter>().mesh.normals);
+				List<int> tri = new List<int>(transform.GetComponent<MeshFilter>().mesh.triangles);
+
+				Exporter.ExportMesh("test", vert, norm, tri);
+
+				//FBXExporter.ExportGameObjToFBX(this.gameObject, "test");
+			}
+
 		}
 
 		private void VisualiseSequence(string sequence)

@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class BladeGen : MonoBehaviour
+public class BladeGenerator : MonoBehaviour
 {
 	public bool nodesFound = false;
 	bool generated = false;

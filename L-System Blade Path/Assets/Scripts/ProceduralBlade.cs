@@ -15,6 +15,8 @@ public class ProceduralBlade: MonoBehaviour
 
 	public bool valuesPassed;
 
+	int cuboidCount = 0;
+
 	public Material mat;
 	public GameObject placeHolder;
 
@@ -50,7 +52,7 @@ public class ProceduralBlade: MonoBehaviour
 
 	void GenerateCuboidLine(int numPoints_)
 	{
-		int cuboidCount = numPoints_ - 1;
+		cuboidCount = numPoints_ - 1;
 
 		vertices = new List<Vector3>();
 		float offset = 0;
@@ -292,6 +294,16 @@ public class ProceduralBlade: MonoBehaviour
 		triangles.Add(vertices.Count - 3);
 		//}
 
+	}
+
+	void CreateEdgesFaces()
+	{
+		int insideFaces = cuboidCount  + 1;
+		int numberFaces = (((vertices.Count - 12) / 6) + 4) - insideFaces;
+		for (int i = 0; i < numberFaces; i++)
+		{
+
+		}
 	}
 
 	private void UpdateMesh()
