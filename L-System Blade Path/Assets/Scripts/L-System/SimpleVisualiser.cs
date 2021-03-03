@@ -115,38 +115,6 @@ namespace SVS
 				BeginMeshGen();
 			}
 
-			if (Input.GetKeyDown(KeyCode.U))
-			{
-				MeshFilter[] meshFilters = GetComponentsInChildren<MeshFilter>();
-				CombineInstance[] combine = new CombineInstance[meshFilters.Length];
-
-				int i = 0;
-				while (i < meshFilters.Length)
-				{
-					combine[i].mesh = meshFilters[i].sharedMesh;
-					combine[i].transform = meshFilters[i].transform.localToWorldMatrix;
-					meshFilters[i].gameObject.SetActive(false);
-
-					i++;
-				}
-
-				//Mesh combinedMesh = new Mesh();
-				//combinedMesh.CombineMeshes(combine);
-
-				transform.GetComponent<MeshFilter>().mesh = new Mesh();
-				transform.GetComponent<MeshFilter>().mesh.CombineMeshes(combine);
-				transform.gameObject.SetActive(true);
-
-
-				List<Vector3> vert = new List<Vector3>(transform.GetComponent<MeshFilter>().mesh.vertices);
-				List<Vector3> norm = new List<Vector3>(transform.GetComponent<MeshFilter>().mesh.normals);
-				List<int> tri = new List<int>(transform.GetComponent<MeshFilter>().mesh.triangles);
-
-				Exporter.ExportMesh("test", vert, norm, tri);
-
-				//FBXExporter.ExportGameObjToFBX(this.gameObject, "test");
-			}
-
 		}
 
 		private void VisualiseSequence(string sequence)

@@ -26,18 +26,39 @@ public static class Exporter
 
 				mesh.InitControlPoints(vertices_.Count);
 
+				//VERT
 				for (int i = 0; i < vertices_.Count; i++)
 				{
 					FbxVector4 pos = new FbxVector4(vertices_[i].x, vertices_[i].y, vertices_[i].z);
 					mesh.SetControlPointAt(pos, i);
 				}
 
+				//NORM
+				FbxLayer lLayer = mesh.GetLayer(0);
+				if (lLayer is null)
+				{
+					mesh.CreateLayer();
+					lLayer = mesh.GetLayer(0);
+				}
+
+				//create normal layer
+				FbxLayerElementNormal lLayerElementNormal = FbxLayerElementNormal.Create(mesh, "layEleNorm");
+
+				// Set its mapping mode to map each normal vector to each control point.
+				lLayerElementNormal.SetMappingMode(FbxLayerElement.EMappingMode.eByControlPoint);
+
+				// Set the reference mode of so that the n'th element of the normal array maps to the n'th
+				// element of the control point array.
+				lLayerElementNormal.SetReferenceMode(FbxLayerElement.EReferenceMode.eDirect);
+
 				for (int i = 0; i < normals_.Count; i++)
 				{
 					FbxVector4 normal = new FbxVector4(normals_[i].x, normals_[i].y, normals_[i].z);
-					mesh.SetControlPointAt(normal, i);
+					//mesh.SetControlPointAt(normal, i);
+					lLayerElementNormal.GetDirectArray().Add(normal);
 				}
 
+				//TRI
 				for (int i = 0; i < triangles_.Count; i+=3)
 				{
 					mesh.BeginPolygon();
@@ -47,7 +68,18 @@ public static class Exporter
 					mesh.EndPolygon();
 				}
 
-				scene.AddMember(mesh);
+
+				FbxNode lRootNode = scene.GetRootNode();
+
+				// Create a child node.
+				FbxNode lChild = FbxNode.Create(scene, "meshNode");
+
+				lChild.SetNodeAttribute(mesh);
+
+				// Add the child to the root node.
+				lRootNode.AddChild(lChild);
+
+				//scene.AddMember(mesh);
 
 				// Export the scene to the file.
 				exporter.Export(scene);
