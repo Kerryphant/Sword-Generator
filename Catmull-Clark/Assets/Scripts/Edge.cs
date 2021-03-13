@@ -19,36 +19,23 @@ public struct Edge
 	public int face1;
 	public int face2;
 }
-
-/*struct EdgePoint
-{
-	public EdgePoint()
-	{
-
-	}
-
-	public Vector3 point;
-}*/
-
-
-public struct Face
-{
-	public Face(List<Vector3> corners_)
-	{
-		cornerVertices = corners_;
-	}
-
-	public List<Vector3> cornerVertices;
-}
-
 public struct FacePoint
 {
 	public FacePoint(List<Vector3> parentVertices_, Vector3 point_)
 	{
-		parentVertices = parentVertices_;
+		parentVertValue = parentVertices_;
 		point = point_;
+		populated = true;
 	}
 
-	public List<Vector3> parentVertices;
+	public FacePoint(List<Vector3> parentVertices_)
+	{
+		parentVertValue = parentVertices_;
+		point = new Vector3();
+		populated = false;
+	}
+
+	bool populated;
+	public List<Vector3> parentVertValue;
 	public Vector3 point;
 }

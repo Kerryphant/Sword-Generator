@@ -54,7 +54,6 @@ public static class Exporter
 				for (int i = 0; i < normals_.Count; i++)
 				{
 					FbxVector4 normal = new FbxVector4(normals_[i].x, normals_[i].y, normals_[i].z);
-					//mesh.SetControlPointAt(normal, i);
 					lLayerElementNormal.GetDirectArray().Add(normal);
 				}
 
@@ -87,7 +86,4 @@ public static class Exporter
 
 		}
 	}
-
-	//FbxExporters.Editor.ConvertToModel.Convert(target.gameObject, null, savePath, null, null, null);
-	//Whereever, you include this line of code make sure it is in a folder called Editor. Otherwise the class FbxExporters.Editor won’t be visible
 }

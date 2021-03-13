@@ -9,9 +9,10 @@ public class ProceduralCuboid : MonoBehaviour
 	List<Vector3> vertices;
 	List<Vector3> normals;
 	List<int> triangles;
+	List<int> quads;
 
 	List<Edge> edges;
-	List<Face> faces;
+	List<FacePoint> faces;
 
 	public float width = 1;
 	public float height = 1;
@@ -46,7 +47,7 @@ public class ProceduralCuboid : MonoBehaviour
 		if (Input.GetKeyDown("space"))
 		{
 			print("space key was pressed");
-			GetComponent<CatmullClark>().SubdivideMesh(ref vertices, ref triangles, ref edges, ref faces);
+			GetComponent<CatmullClark>().SubdivideMesh(ref vertices, ref triangles, ref quads, ref edges, ref faces);
 		}
 
 		//MakeCuboid();
@@ -84,25 +85,40 @@ public class ProceduralCuboid : MonoBehaviour
 			6, 0, 4, 4, 0, 2
 		};
 
-		faces = new List<Face>()
+		//6 indices for each triangle face, 4 indices for quad faces
+		int faceCount = (triangles.Count / 6);
+		
+		quads = new List<int>();
+		//for (int i = 0; i < faceCount; i++)
+		//{
+			for (int j = 0; j < triangles.Count; j+=6)
+			{
+				quads.Add(triangles[j]);
+				quads.Add(triangles[j+1]);
+				quads.Add(triangles[j+5]);
+				quads.Add(triangles[j+2]);
+			}
+		//}
+
+		faces = new List<FacePoint>()
 		{
-			new Face(new List<Vector3>//front
-			{vertices[0], vertices[1], vertices[2], vertices[3]}),
+			new FacePoint(new List<Vector3>//front
+			{vertices[0], vertices[1], vertices[3], vertices[2]}),
 
-			new Face(new List<Vector3>//right
-			{vertices[2], vertices[3], vertices[4], vertices[5]}),
+			new FacePoint(new List<Vector3>//right
+			{vertices[2], vertices[3], vertices[5], vertices[4]}),
 
-			new Face(new List<Vector3>//back
-			{vertices[4], vertices[5], vertices[6], vertices[7]}),
+			new FacePoint(new List<Vector3>//back
+			{vertices[4], vertices[5], vertices[7], vertices[6]}),
 
-			new Face(new List<Vector3>//left
-			{vertices[6], vertices[7], vertices[0], vertices[1]}),
+			new FacePoint(new List<Vector3>//left
+			{vertices[6], vertices[7], vertices[1], vertices[0]}),
 
-			new Face(new List<Vector3>//top
-			{vertices[1], vertices[7], vertices[3], vertices[5]}),
+			new FacePoint(new List<Vector3>//top
+			{vertices[1], vertices[7], vertices[5], vertices[3]}),
 
-			new Face(new List<Vector3>//bottom
-			{vertices[6], vertices[0], vertices[4], vertices[2]})
+			new FacePoint(new List<Vector3>//bottom
+			{vertices[6], vertices[0], vertices[2], vertices[4]})
 		};
 
 		edges = new List<Edge>
@@ -140,8 +156,8 @@ public class ProceduralCuboid : MonoBehaviour
 		{
 			for (int j = 0; j < faces.Count; j++)
 			{
-				bool check1 = (faces[j].cornerVertices.Contains(edges[i].startVert));
-				bool check2 = (faces[j].cornerVertices.Contains(edges[i].endVert));
+				bool check1 = (faces[j].parentVertValue.Contains(edges[i].startVert));
+				bool check2 = (faces[j].parentVertValue.Contains(edges[i].endVert));
 				if (check1 && check2)
 				{
 					if(edges[i].face1 >= 0)
