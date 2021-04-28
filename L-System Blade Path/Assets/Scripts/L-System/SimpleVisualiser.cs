@@ -115,6 +115,11 @@ namespace SVS
 				BeginMeshGen();
 			}
 
+			if (Input.GetKeyDown(KeyCode.C))
+			{
+				transform.GetComponent<ProceduralBlade>().SmoothMesh();
+			}
+
 		}
 
 		private void VisualiseSequence(string sequence)

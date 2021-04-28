@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace SVS
 {
-	[CreateAssetMenu(menuName ="ProceduralCity")]
+	[CreateAssetMenu(menuName ="L-System")]
 	public class Rule : ScriptableObject
 	{
 		public string letter;

@@ -9,6 +9,10 @@ public class ProceduralBlade: MonoBehaviour
 	List<Vector3> normals;
 	List<int> triangles;
 
+	List<FacePoint> faces;
+	List<Edge> edges;
+	List<int> quads;
+
 	public float width = 1;
 	public float height = 1;
 	public float depth = 3;
@@ -48,6 +52,8 @@ public class ProceduralBlade: MonoBehaviour
 		GenerateCuboidLine(numPoints_);
 		PositionVerticesToPoints(numPoints_, points_);
 		ShapeIntoDiamondBlade(numPoints_, points_);
+
+		CreateEdgesFaces();
 	}
 
 	void GenerateCuboidLine(int numPoints_)
@@ -165,13 +171,13 @@ public class ProceduralBlade: MonoBehaviour
 		{
 			//get the angle between the positive x-axis and the line made from the current point to the next point
 			float rotationA = SignedAngleBetween(Vector3.right, points_[i + 1] - points_[i], new Vector3(0, 1, 0));
-			
+
 			//get HALF of angle between the line made from the current & next point and the current & previous point
 			float rotationB = SignedAngleBetween(points_[i + 1] - points_[i], points_[i - 1] - points_[i], new Vector3(0, 1, 0)) / 2;
-			
+
 			//get the rotation in degrees by adding the calculated angles
 			float rotation = rotationA + rotationB;
-			
+
 			//Check if the angle must be flipped
 			if (rotationB < 0)
 			{
@@ -266,44 +272,253 @@ public class ProceduralBlade: MonoBehaviour
 
 			startVert += 4;
 		}
-		
 
+		CreateBladeTip(points_);
+
+	}
+
+	void CreateBladeTip(List<Vector3> points_)
+	{
 		//Create the point of the blade
 		Vector3 midpoint = new Vector3((vertices[vertices.Count - 4].x + vertices[vertices.Count - 1].x) / 2.0f, (vertices[vertices.Count - 4].y + vertices[vertices.Count - 1].y) / 2.0f, (vertices[vertices.Count - 4].z + vertices[vertices.Count - 1].z) / 2.0f);
 		Vector3 direction = points_[points_.Count - 2] - points_[points_.Count - 1];
 		direction.Normalize();
-		vertices.Add(midpoint - (2*direction));
+		Vector3 target = (midpoint - (2 * direction));
 
-		//startVert = 5;
-		//for (int i = 0; i < 4; i++)
-		//{
+		//create 4 new vertices which are very close in value. This is so a quad can be created for catmull clark usage
+		List<Vector3> tempVerts = new List<Vector3>();
+		
+		tempVerts.Add(Vector3.Lerp(vertices[vertices.Count - 4], target, 0.9f));
+		tempVerts.Add(Vector3.Lerp(vertices[vertices.Count - 3], target, 0.9f));
+		tempVerts.Add(Vector3.Lerp(vertices[vertices.Count - 2], target, 0.9f));
+		tempVerts.Add(Vector3.Lerp(vertices[vertices.Count - 1], target, 0.9f));
+
+		for (int i = 0; i < tempVerts.Count; i++)
+		{
+			vertices.Add(tempVerts[i]);
+		}
+
+		//front
+		triangles.Add(vertices.Count - 2);
 		triangles.Add(vertices.Count - 1);
 		triangles.Add(vertices.Count - 4);
-		triangles.Add(vertices.Count - 5);
-
-		triangles.Add(vertices.Count - 1);
-		triangles.Add(vertices.Count - 2);
 		triangles.Add(vertices.Count - 4);
-
 		triangles.Add(vertices.Count - 1);
 		triangles.Add(vertices.Count - 3);
-		triangles.Add(vertices.Count - 2);
 
+		//right
+		triangles.Add(vertices.Count - 4);
+		triangles.Add(vertices.Count - 3);
+		triangles.Add(vertices.Count - 8);
+		triangles.Add(vertices.Count - 8);
+		triangles.Add(vertices.Count - 3);
+		triangles.Add(vertices.Count - 7);
+
+		//back
+		triangles.Add(vertices.Count - 5);
+		triangles.Add(vertices.Count - 6);
+		triangles.Add(vertices.Count - 8);
+		triangles.Add(vertices.Count - 8);
+		triangles.Add(vertices.Count - 7);
+		triangles.Add(vertices.Count - 5);
+
+		//left
+		triangles.Add(vertices.Count - 6);
+		triangles.Add(vertices.Count - 5);
+		triangles.Add(vertices.Count - 2);
+		triangles.Add(vertices.Count - 2);
+		triangles.Add(vertices.Count - 5);
+		triangles.Add(vertices.Count - 1);
+
+		//top
 		triangles.Add(vertices.Count - 1);
 		triangles.Add(vertices.Count - 5);
 		triangles.Add(vertices.Count - 3);
-		//}
+		triangles.Add(vertices.Count - 3);
+		triangles.Add(vertices.Count - 5);
+		triangles.Add(vertices.Count - 7);
 
+		//bottom
+		triangles.Add(vertices.Count - 4);
+		triangles.Add(vertices.Count - 8);
+		triangles.Add(vertices.Count - 2);
+		triangles.Add(vertices.Count - 2);
+		triangles.Add(vertices.Count - 8);
+		triangles.Add(vertices.Count - 6);
 	}
 
 	void CreateEdgesFaces()
 	{
-		int insideFaces = cuboidCount  + 1;
-		int numberFaces = (((vertices.Count - 12) / 6) + 4) - insideFaces;
-		for (int i = 0; i < numberFaces; i++)
+		faces = new List<FacePoint>();
+		edges = new List<Edge>();
+		quads = new List<int>();
+		HashSet<Edge> edgesLookup = new HashSet<Edge>();
+
+		//FACE & QUAD CREATION
+		FacePoint tempFacePoint;
+		int lastIteration = vertices.Count - 8;
+		for (int i = 0; i < vertices.Count - 4; i+=4)
 		{
+			//front
+			if (i == 0)
+			{
+				tempFacePoint = new FacePoint(new List<Vector3>() { vertices[i], vertices[i + 1], vertices[i + 3], vertices[i + 2] });
+				faces.Add(tempFacePoint);
+				quads.Add(i);
+				quads.Add(i+1);
+				quads.Add(i+3);
+				quads.Add(i+2);
+			}
+
+			//right
+			tempFacePoint = new FacePoint(new List<Vector3>() { vertices[i + 2], vertices[i + 3], vertices[i + 7], vertices[i + 6] });
+			faces.Add(tempFacePoint);
+			/*quads.Add(i + 2);
+			quads.Add(i + 3);
+			quads.Add(i + 5);
+			quads.Add(i + 4);*/
+			quads.Add(i + 2);
+			quads.Add(i + 3);
+			quads.Add(i + 7);
+			quads.Add(i + 6);
+
+			//back
+			if (i == lastIteration)
+			{
+				tempFacePoint = new FacePoint(new List<Vector3>() { vertices[i + 6], vertices[i + 7], vertices[i + 5], vertices[i + 4] });
+				faces.Add(tempFacePoint);
+				/*quads.Add(i + 4);
+				quads.Add(i + 5);
+				quads.Add(i + 7);
+				quads.Add(i + 6);*/
+				quads.Add(i + 6);
+				quads.Add(i + 7);
+				quads.Add(i + 5);
+				quads.Add(i + 4);
+			}
+
+			//left													    
+			tempFacePoint = new FacePoint(new List<Vector3>() { vertices[i + 4], vertices[i + 5], vertices[i + 1], vertices[i + 0] });
+			faces.Add(tempFacePoint);
+			/*quads.Add(i + 6);
+			quads.Add(i + 7);
+			quads.Add(i + 1);
+			quads.Add(i + 0);*/
+
+			quads.Add(i + 4);
+			quads.Add(i + 5);
+			quads.Add(i + 1);
+			quads.Add(i + 0);
+
+			//top													    
+			tempFacePoint = new FacePoint(new List<Vector3>() { vertices[i + 1], vertices[i + 5], vertices[i + 7], vertices[i + 3] });
+			faces.Add(tempFacePoint);
+			/*quads.Add(i + 1);
+			quads.Add(i + 7);
+			quads.Add(i + 5);
+			quads.Add(i + 3);*/
+
+			quads.Add(i + 1);
+			quads.Add(i + 5);
+			quads.Add(i + 7);
+			quads.Add(i + 3);
+
+			 //bottom												   
+			 tempFacePoint = new FacePoint(new List<Vector3>() { vertices[i + 0], vertices[i + 2], vertices[i + 6], vertices[i + 4] });
+			faces.Add(tempFacePoint);
+			/*quads.Add(i + 6);
+			quads.Add(i + 0);
+			quads.Add(i + 2);
+			quads.Add(i + 4);*/
+
+			quads.Add(i + 0);
+			quads.Add(i + 2);
+			quads.Add(i + 6);
+			quads.Add(i + 4);
+		}
+
+
+
+		//EDGE CREATION
+		for (int i = 0; i < faces.Count; i++)
+		{
+			Edge tempEdge = new Edge(faces[i].parentVertValue[0], faces[i].parentVertValue[1]);
+			if(!edgeExists(tempEdge))
+			{
+				//tempEdge.face1 = i;
+				edgesLookup.Add(tempEdge);
+				edges.Add(tempEdge);
+			}
+
+			tempEdge = new Edge(faces[i].parentVertValue[1], faces[i].parentVertValue[2]);
+			if (!edgeExists(tempEdge))
+			{
+				//tempEdge.face1 = i;
+				edgesLookup.Add(tempEdge);
+				edges.Add(tempEdge);
+			}
+
+			tempEdge = new Edge(faces[i].parentVertValue[2], faces[i].parentVertValue[3]);
+			if (!edgeExists(tempEdge))
+			{
+				//tempEdge.face1 = i;
+				edgesLookup.Add(tempEdge);
+				edges.Add(tempEdge);
+			}
+
+			tempEdge = new Edge(faces[i].parentVertValue[3], faces[i].parentVertValue[0]);
+			if (!edgeExists(tempEdge))
+			{
+				//tempEdge.face1 = i;
+				edgesLookup.Add(tempEdge);
+				edges.Add(tempEdge);
+			}
 
 		}
+
+		///*
+		for (int i = 0; i < edges.Count; i++)
+		{
+			for (int j = 0; j < faces.Count; j++)
+			{
+				bool check1 = (faces[j].parentVertValue.Contains(edges[i].startVert));
+				bool check2 = (faces[j].parentVertValue.Contains(edges[i].endVert));
+				if (check1 && check2)
+				{
+					if (edges[i].face1 >= 0)
+					{
+						Edge newEdge = edges[i];
+
+						newEdge.face2 = j;
+						edges[i] = newEdge;
+					}
+					else
+					{
+						Edge newEdge = edges[i];
+						newEdge.face1 = j;
+						edges[i] = newEdge;
+					}
+				}
+			}
+		}//*/
+	}
+
+	bool edgeExists(Edge edge_)
+	{
+		for (int i = 0; i < edges.Count; i++)
+		{
+			if((edges[i].startVert == edge_.startVert && edges[i].endVert == edge_.endVert) || (edges[i].startVert == edge_.endVert && edges[i].endVert == edge_.startVert))
+			{
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	public void SmoothMesh()
+	{
+		CatmullClarkSubdivide.SubdivideMesh(ref vertices, ref triangles, ref quads, ref edges, ref faces);
 	}
 
 	private void UpdateMesh()
@@ -316,3 +531,39 @@ public class ProceduralBlade: MonoBehaviour
 
 	}
 }
+
+
+/*
+//back
+triangles.Add(vertices.Count - 3);
+triangles.Add(vertices.Count - 4);
+triangles.Add(vertices.Count - 2);
+triangles.Add(vertices.Count - 2);
+triangles.Add(vertices.Count - 1);
+triangles.Add(vertices.Count - 3);*/
+
+//Blade tip
+/*faces.Add(tempFacePoint = new FacePoint(new List<Vector3>() { vertices[vertices.Count - 1], vertices[vertices.Count - 1], vertices[vertices.Count - 4], vertices[vertices.Count - 5] }));
+faces.Add(tempFacePoint = new FacePoint(new List<Vector3>() { vertices[vertices.Count - 1], vertices[vertices.Count - 1], vertices[vertices.Count - 2], vertices[vertices.Count - 4] }));
+faces.Add(tempFacePoint = new FacePoint(new List<Vector3>() { vertices[vertices.Count - 1], vertices[vertices.Count - 1], vertices[vertices.Count - 3], vertices[vertices.Count - 2] }));
+faces.Add(tempFacePoint = new FacePoint(new List<Vector3>() { vertices[vertices.Count - 1], vertices[vertices.Count - 1], vertices[vertices.Count - 5], vertices[vertices.Count - 3] }));
+
+quads.Add(vertices.Count - 1);
+quads.Add(vertices.Count - 1);
+quads.Add(vertices.Count - 4);
+quads.Add(vertices.Count - 5);
+
+quads.Add(vertices.Count - 1);
+quads.Add(vertices.Count - 1);
+quads.Add(vertices.Count - 2);
+quads.Add(vertices.Count - 4);
+
+quads.Add(vertices.Count - 1);
+quads.Add(vertices.Count - 1);
+quads.Add(vertices.Count - 3);
+quads.Add(vertices.Count - 2);
+
+quads.Add(vertices.Count - 1);
+quads.Add(vertices.Count - 1);
+quads.Add(vertices.Count - 5);
+quads.Add(vertices.Count - 3);*/

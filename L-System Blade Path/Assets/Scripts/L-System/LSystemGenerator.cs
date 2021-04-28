@@ -59,9 +59,9 @@ namespace SVS
 			return GrowRecursive(word);
 		}
 
-		private string GrowRecursive(string word, int iterationIndex = 0)
+		private string GrowRecursive(string word, int currentIndex = 0)
 		{
-			if (iterationIndex >= iterationLimit)
+			if (currentIndex >= iterationLimit)
 			{
 				return word;
 			}
@@ -71,19 +71,19 @@ namespace SVS
 			foreach(var c in word)
 			{
 				newWord.Append(c);
-				ProcessRulesRecursivelly(newWord, c, iterationIndex);
+				ProcessRulesRecursively(newWord, c, currentIndex);
 			}
 
 			return newWord.ToString();
 		}
 
-		private void ProcessRulesRecursivelly(StringBuilder newWord, char c, int iterationIndex)
+		private void ProcessRulesRecursively(StringBuilder newWord, char c, int currentIndex)
 		{
 			foreach (var rule in rules)
 			{
 				if(rule.letter == c.ToString())
 				{
-					if (randomIgnoreRuleModifier  && iterationIndex > 1)
+					if (randomIgnoreRuleModifier  && currentIndex > 1)
 					{
 						//randomly ignore branches
 						if (Random.value < chanceToIgnoreRule)
@@ -91,11 +91,9 @@ namespace SVS
 							return;
 						}
 					}
-					newWord.Append(GrowRecursive(rule.GetResult(), ++iterationIndex));
+					newWord.Append(GrowRecursive(rule.GetResult(), ++currentIndex));
 				}
 			}
 		}
 	}
 }
-
-
