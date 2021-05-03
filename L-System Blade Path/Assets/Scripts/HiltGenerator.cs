@@ -5,6 +5,7 @@ using UnityEngine;
 public class HiltGenerator : MonoBehaviour
 {
 	public bool generated = false;
+	public bool bladeSmoothed = false;
 
 	void Start()
     {
@@ -15,7 +16,15 @@ public class HiltGenerator : MonoBehaviour
 
     void Update()
     {
+
+
 		ProceduralHilt mesh = transform.GetComponent<ProceduralHilt>();
+
+		if (mesh.bladeSmoothed != bladeSmoothed)
+		{
+			mesh.bladeSmoothed = bladeSmoothed;
+		}
+		
 		if (!generated)
 		{	
 			mesh.generated = true;

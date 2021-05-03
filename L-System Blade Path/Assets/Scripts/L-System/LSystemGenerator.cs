@@ -20,7 +20,7 @@ namespace SVS
 		[Range(0, 1)]
 		public float chanceToIgnoreRule = 0.3f;
 
-
+		public InputField rootSentenceInput;
 		public InputField iterationInput;
 		public InputField ignoreRuleInput;
 
@@ -28,8 +28,9 @@ namespace SVS
 		{
 			Debug.Log(GenerateSentence());
 
+			rootSentenceInput.onEndEdit.AddListener(delegate { setRootSentence(rootSentenceInput); });
 			iterationInput.onEndEdit.AddListener(delegate { setIterationLimit(iterationInput); });
-			ignoreRuleInput.onEndEdit.AddListener(delegate { setIgnoreRule(ignoreRuleInput); });
+			ignoreRuleInput.onEndEdit.AddListener(delegate { setIgnoreRule(ignoreRuleInput); });		
 		}
 
 		void setIterationLimit(InputField userInput)
@@ -48,6 +49,11 @@ namespace SVS
 			{
 				chanceToIgnoreRule = float.Parse(userInput.text);
 			}
+		}
+
+		void setRootSentence(InputField userInput)
+		{
+			rootSentence = userInput.text;
 		}
 
 		public string GenerateSentence(string word = null)

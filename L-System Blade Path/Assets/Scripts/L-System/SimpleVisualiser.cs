@@ -27,6 +27,8 @@ namespace SVS
 		public InputField angleInput;
 		public InputField randomAngleInput;
 		public Button button;
+		public Button catmullButton;
+		public Button catmullHiltButton;
 
 		public int Length
 		{
@@ -56,6 +58,8 @@ namespace SVS
 
 
 			button.onClick.AddListener(BeginMeshGen);
+			catmullButton.onClick.AddListener(ApplyCatmull);
+			catmullHiltButton.onClick.AddListener(ApplyCatmullHilt);
 		}
 
 
@@ -104,6 +108,7 @@ namespace SVS
 
 			transform.GetComponent<BladeGenerator>().nodesFound = false;
 			transform.GetComponentInChildren<HiltGenerator>().generated = false;
+			transform.GetComponentInChildren<HiltGenerator>().bladeSmoothed = false;
 			transform.GetComponent<ProceduralBlade>().valuesPassed = false;
 		}
 
@@ -120,6 +125,19 @@ namespace SVS
 				transform.GetComponent<ProceduralBlade>().SmoothMesh();
 			}
 
+		}
+
+		private void ApplyCatmull()
+		{
+			transform.GetComponent<ProceduralBlade>().SmoothMesh();
+			transform.GetComponentInChildren<HiltGenerator>().bladeSmoothed = true;
+		}
+
+
+		private void ApplyCatmullHilt()
+		{
+			transform.GetComponentInChildren<ProceduralHilt>().hiltSmoothed = true;
+			transform.GetComponentInChildren<ProceduralHilt>().SmoothHilt();
 		}
 
 		private void VisualiseSequence(string sequence)
